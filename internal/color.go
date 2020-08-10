@@ -73,6 +73,6 @@ OrangeRed,
 }
 
 func GetRandomColor() Color {
-idx := rand.Intn(len(allColors))
-return allColors[idx]
+	idx := rand.Intn(len(allColors))
+	return allColors[idx]
 }
