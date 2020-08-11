@@ -1,33 +1,66 @@
 package rest
 
 import (
+	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/holmes89/tags/internal"
+	"github.com/holmes89/tags/internal/database"
+	"io/ioutil"
 	"net/http"
 )
 
 type tagHandler struct {
+	repo database.Repository
 }
 
-func NewTagHandler(mr *mux.Router) http.Handler {
+func NewTagHandler(mr *mux.Router, repo database.Repository) http.Handler {
 	r := mr.PathPrefix("/tag").Subrouter()
 
 	h := &tagHandler{
+		repo: repo,
 	}
 
 	r.HandleFunc("/", h.FindAll).Methods("GET")
-	r.HandleFunc("/{name}", h.Create).Methods("POST")
-	r.HandleFunc("/{name}", h.Delete).Methods("DELETE")
-
+	r.HandleFunc("/{id}", h.FindByID).Methods("GET")
+	r.HandleFunc("/", h.Create).Methods("POST")
 
 	return r
 }
 
 func (h *tagHandler) FindAll(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.repo.FindAllTags(nil)
+	if err != nil {
+		EncodeError(w, http.StatusInternalServerError, "tags", "unable to find tags", "find all")
+		return
+	}
+	EncodeJSONResponse(r.Context(), w, resp)
+}
 
+func (h *tagHandler) FindByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	id := vars["id"]
+	resp, err := h.repo.FindTagByName(id)
+	if err != nil {
+		EncodeError(w, http.StatusInternalServerError, "tags", "unable to find tags", "find all")
+		return
+	}
+	EncodeJSONResponse(r.Context(), w, resp)
 }
 
 func (h *tagHandler) Create(w http.ResponseWriter, r *http.Request) {
-}
+	b, _ := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
 
-func (h *tagHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	var tag internal.Tag
+	if err := json.Unmarshal(b, &tag); err != nil {
+		EncodeError(w, http.StatusBadRequest, "tag", "Bad Request from unmarshalling", "create")
+		return
+	}
+	t, err := h.repo.CreateTag(tag)
+	if err != nil {
+		EncodeError(w, http.StatusInternalServerError, "tag", "failed to create tag", "create")
+		return
+	}
+	EncodeJSONResponse(r.Context(), w, t)
 }

@@ -6,9 +6,10 @@ type Tag struct {
 }
 
 type TagFactory interface {
-	CreateTag(tag Tag) error
+	CreateTag(tag Tag) (Tag, error)
 }
 
 type TagRepository interface {
 	FindTagByName(name string) (Tag, error)
+	FindAllTags(params map[string]string) ([]Tag, error)
 }

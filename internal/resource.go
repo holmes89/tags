@@ -8,11 +8,15 @@ type Resource struct {
 }
 
 type ResourceFactory interface {
-	CreateResource(resource Resource, tag Tag) error
+	CreateResource(resource Resource) (Resource, error)
 }
 
 type ResourceRepository interface {
-	FindResourceByTypeAndID(rtype, id string) (Resource, error)
-	FindResourcesByTag(tag string) ([]Resource, error)
-	FindAll() ([]Resource, error)
+	FindByID(id string) (Resource, error)
+	FindAll(params map[string]string) ([]Resource, error)
+}
+
+type ResourceTagger interface {
+	Add(resource Resource, tag string) (Resource, error)
+	Delete(resource Resource, tag string) error
 }
