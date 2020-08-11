@@ -23,6 +23,7 @@ func NewTagHandler(mr *mux.Router, repo database.Repository) http.Handler {
 
 	r.HandleFunc("/", h.FindAll).Methods("GET")
 	r.HandleFunc("/{id}", h.FindByID).Methods("GET")
+	r.HandleFunc("/{id}/resources/", h.FindResourcesByTag).Methods("GET")
 	r.HandleFunc("/", h.Create).Methods("POST")
 
 	return r
@@ -70,4 +71,16 @@ func (h *tagHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	EncodeJSONResponse(r.Context(), w, t)
+}
+
+func (h *tagHandler) FindResourcesByTag(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	params := internal.ResourceParams{Tag: id}
+	resp, err := h.repo.FindAll(params)
+	if err != nil {
+		EncodeError(w, http.StatusInternalServerError, "tags", "unable to find tags", "find all resources")
+		return
+	}
+	EncodeJSONResponse(r.Context(), w, resp)
 }

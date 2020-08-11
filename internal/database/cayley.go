@@ -208,31 +208,68 @@ func (r *repository) CreateTag(tag internal.Tag) (internal.Tag, error) {
 
 
 func (r *repository) FindAll(params internal.ResourceParams) ([]internal.Resource, error){
-	var resources []internal.Resource
-	if params.Type != "" {
-		logrus.WithField("type", params.Type).Info("searching by type")
-		p := cayley.StartPath(r.conn, quad.String(params.Type)).Out(quad.String("resource"))
-		var ids []string
-		err := p.Iterate(nil).EachValue(nil, func(value quad.Value){
-			id := strings.Split((quad.NativeOf(value)).(string), ":")[1]
-			logrus.WithField("id", id).Info("found entity")
-			ids = append(ids, id)
-		})
-		if err != nil {
-			logrus.WithError(err).Error("unable to query results")
-			return nil, errors.New("unable to query results")
-		}
-		for _, id := range ids {
-			resource, err := r.FindByID(id)
-			if err != nil {
-				logrus.WithField("id", id).Error("does not exist")
-				return nil, errors.New("does not exist")
-			}
-			resources = append(resources, resource)
-		}
-		return resources, nil
+ 	if params.Type != "" {
+ 		return r.findByType(params.Type)
 	}
+	if params.Tag != "" {
+		return r.findByTag(params.Tag)
+	}
+	return r.findAll()
+}
 
+func (r *repository) findByTag(t string) ([]internal.Resource, error) {
+	var resources []internal.Resource
+	logrus.WithField("tag", t).Info("searching by tag")
+	p := cayley.StartPath(r.conn, quad.String(tagKey(t))).Out(quad.String("resource"))
+	var ids []string
+	err := p.Iterate(nil).EachValue(nil, func(value quad.Value){
+		id := strings.Split((quad.NativeOf(value)).(string), ":")[1]
+		logrus.WithField("id", id).Info("found entity")
+		ids = append(ids, id)
+	})
+	if err != nil {
+		logrus.WithError(err).Error("unable to query results")
+		return nil, errors.New("unable to query results")
+	}
+	for _, id := range ids {
+		resource, err := r.FindByID(id)
+		if err != nil {
+			logrus.WithField("id", id).Error("does not exist")
+			return nil, errors.New("does not exist")
+		}
+		resources = append(resources, resource)
+	}
+	return resources, nil
+}
+
+
+func (r *repository) findByType(t string) ([]internal.Resource, error) {
+	var resources []internal.Resource
+	logrus.WithField("type", t).Info("searching by type")
+	p := cayley.StartPath(r.conn, quad.String(t)).Out(quad.String("resource"))
+	var ids []string
+	err := p.Iterate(nil).EachValue(nil, func(value quad.Value){
+		id := strings.Split((quad.NativeOf(value)).(string), ":")[1]
+		logrus.WithField("id", id).Info("found entity")
+		ids = append(ids, id)
+	})
+	if err != nil {
+		logrus.WithError(err).Error("unable to query results")
+		return nil, errors.New("unable to query results")
+	}
+	for _, id := range ids {
+		resource, err := r.FindByID(id)
+		if err != nil {
+			logrus.WithField("id", id).Error("does not exist")
+			return nil, errors.New("does not exist")
+		}
+		resources = append(resources, resource)
+	}
+	return resources, nil
+}
+
+func (r *repository) findAll() ([]internal.Resource, error) {
+	var resources []internal.Resource
 	for k, v := range r.kv {
 		s := strings.Split(k, ":")
 		if s[0] != "resource" {
