@@ -214,7 +214,7 @@ func (r *repository) FindAll(params internal.ResourceParams) ([]internal.Resourc
 		p := cayley.StartPath(r.conn, quad.String(params.Type)).Out(quad.String("resource"))
 		var ids []string
 		err := p.Iterate(nil).EachValue(nil, func(value quad.Value){
-			id := value.String()
+			id := strings.Split(value.String(), ":")[1]
 			logrus.WithField("id", id).Info("found entity")
 			ids = append(ids, id)
 		})
@@ -223,7 +223,7 @@ func (r *repository) FindAll(params internal.ResourceParams) ([]internal.Resourc
 			return nil, errors.New("unable to query results")
 		}
 		for _, id := range ids {
-			resource, err := r.FindByID(id)
+			resource, err := r.FindByID(id))
 			if err != nil {
 				logrus.WithField("id", id).Error("does not exist")
 				return nil, errors.New("does not exist")
