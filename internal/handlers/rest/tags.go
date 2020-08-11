@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/holmes89/tags/internal"
 	"github.com/holmes89/tags/internal/database"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
@@ -28,7 +29,13 @@ func NewTagHandler(mr *mux.Router, repo database.Repository) http.Handler {
 }
 
 func (h *tagHandler) FindAll(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.repo.FindAllTags(nil)
+	var params internal.TagParams
+	if err := decoder.Decode(&params, r.URL.Query()); err != nil {
+		logrus.WithError(err).Error("unable to parse params")
+		EncodeError(w, http.StatusBadRequest, "tags", "unable to parse params", "find all")
+		return
+	}
+	resp, err := h.repo.FindAllTags(params)
 	if err != nil {
 		EncodeError(w, http.StatusInternalServerError, "tags", "unable to find tags", "find all")
 		return

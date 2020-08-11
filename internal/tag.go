@@ -11,5 +11,9 @@ type TagFactory interface {
 
 type TagRepository interface {
 	FindTagByName(name string) (Tag, error)
-	FindAllTags(params map[string]string) ([]Tag, error)
+	FindAllTags(params TagParams) ([]Tag, error)
+}
+
+type TagParams struct {
+	Type string `schema:"type"`
 }

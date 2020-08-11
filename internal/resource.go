@@ -13,10 +13,16 @@ type ResourceFactory interface {
 
 type ResourceRepository interface {
 	FindByID(id string) (Resource, error)
-	FindAll(params map[string]string) ([]Resource, error)
+	FindAll(params ResourceParams) ([]Resource, error)
 }
 
 type ResourceTagger interface {
 	Add(resource Resource, tag string) (Resource, error)
 	Delete(resource Resource, tag string) error
+}
+
+type ResourceParams struct {
+	Type string `schema:"type"`
+	Name string `schema:"name"`
+	Tag string `schema:"tag"`
 }

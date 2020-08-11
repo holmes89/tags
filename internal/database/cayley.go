@@ -160,6 +160,7 @@ func (r *repository) CreateResource(resource internal.Resource) (internal.Resour
 
 	t.AddQuad(quad.Make(id, "name", resource.Name, nil))
 	t.AddQuad(quad.Make(id, "type", resource.Type, nil))
+	t.AddQuad(quad.Make(resource.Type, "resource", id, nil))
 	var tags []internal.Tag
 	for _, tag := range resource.Tags {
 		tagID := tagKey(tag.Name)
@@ -206,8 +207,32 @@ func (r *repository) CreateTag(tag internal.Tag) (internal.Tag, error) {
 }
 
 
-func (r *repository) FindAll(_ map[string]string) ([]internal.Resource, error){
+func (r *repository) FindAll(params internal.ResourceParams) ([]internal.Resource, error){
 	var resources []internal.Resource
+	if params.Type != "" {
+		logrus.WithField("type", params.Type).Info("searching by type")
+		p := cayley.StartPath(r.conn, quad.String(params.Type)).Out(quad.String("resource"))
+		var ids []string
+		err := p.Iterate(nil).EachValue(nil, func(value quad.Value){
+			id := value.String()
+			logrus.WithField("id", id).Info("found entity")
+			ids = append(ids, id)
+		})
+		if err != nil {
+			logrus.WithError(err).Error("unable to query results")
+			return nil, errors.New("unable to query results")
+		}
+		for _, id := range ids {
+			resource, err := r.FindByID(id)
+			if err != nil {
+				logrus.WithField("id", id).Error("does not exist")
+				return nil, errors.New("does not exist")
+			}
+			resources = append(resources, resource)
+		}
+		return resources, nil
+	}
+
 	for k, v := range r.kv {
 		s := strings.Split(k, ":")
 		if s[0] != "resource" {
@@ -222,7 +247,7 @@ func (r *repository) FindAll(_ map[string]string) ([]internal.Resource, error){
 	return resources, nil
 }
 
-func (r *repository) FindAllTags(_ map[string]string) ([]internal.Tag, error){
+func (r *repository) FindAllTags(_ internal.TagParams) ([]internal.Tag, error){
 	var tags []internal.Tag
 	for k, v := range r.kv {
 		s := strings.Split(k, ":")
@@ -244,14 +269,4 @@ func resourceKey(id string) string {
 
 func tagKey(name string) string {
 	return fmt.Sprintf("tag:%s", name)
-}
-
-type TagParams struct {
-	Type string `schema:"type"`
-}
-
-type ResourceParams struct {
-	Type string `schema:"type"`
-	Name string `schema:"name"`
-	Tag string `schema:"tag"`
 }

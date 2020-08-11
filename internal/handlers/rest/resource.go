@@ -3,11 +3,15 @@ package rest
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 	"github.com/holmes89/tags/internal"
 	"github.com/holmes89/tags/internal/database"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
+
+var decoder = schema.NewDecoder()
 
 type resourceHandler struct {
 	repo database.Repository
@@ -28,7 +32,13 @@ func NewResourceHandler(mr *mux.Router, repo database.Repository) http.Handler {
 }
 
 func (h *resourceHandler) FindAll(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.repo.FindAll(nil)
+	var params internal.ResourceParams
+	if err := decoder.Decode(&params, r.URL.Query()); err != nil {
+		logrus.WithError(err).Error("unable to parse params")
+		EncodeError(w, http.StatusBadRequest, "resources", "unable to parse params", "find all")
+		return
+	}
+	resp, err := h.repo.FindAll(params)
 	if err != nil {
 		EncodeError(w, http.StatusInternalServerError, "resources", "unable to find resources", "find all")
 		return
