@@ -12,13 +12,13 @@ type ResourceFactory interface {
 }
 
 type ResourceRepository interface {
-	FindByID(id string) (Resource, error)
-	FindAll(params ResourceParams) ([]Resource, error)
+	FindResourceByID(id string) (Resource, error)
+	FindAllResources(params *ResourceParams) ([]Resource, error)
 }
 
 type ResourceTagger interface {
-	Add(resource Resource, tag string) (Resource, error)
-	Delete(resource Resource, tag string) error
+	AddTagToResource(resource Resource, tag string) (Resource, error)
+	DeleteTagFromResource(resource Resource, tag string) error
 }
 
 type ResourceParams struct {

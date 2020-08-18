@@ -11,7 +11,7 @@ type TagFactory interface {
 
 type TagRepository interface {
 	FindTagByName(name string) (Tag, error)
-	FindAllTags(params TagParams) ([]Tag, error)
+	FindAllTags(params *TagParams) ([]Tag, error)
 }
 
 type TagParams struct {

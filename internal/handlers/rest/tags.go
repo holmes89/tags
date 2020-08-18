@@ -30,11 +30,15 @@ func NewTagHandler(mr *mux.Router, repo database.Repository) http.Handler {
 }
 
 func (h *tagHandler) FindAll(w http.ResponseWriter, r *http.Request) {
-	var params internal.TagParams
-	if err := decoder.Decode(&params, r.URL.Query()); err != nil {
-		logrus.WithError(err).Error("unable to parse params")
-		EncodeError(w, http.StatusBadRequest, "tags", "unable to parse params", "find all")
-		return
+	var params *internal.TagParams
+	if len(r.URL.Query()) > 0 {
+		p := internal.TagParams{}
+		if err := decoder.Decode(&p, r.URL.Query()); err != nil {
+			logrus.WithError(err).Error("unable to parse params")
+			EncodeError(w, http.StatusBadRequest, "tags", "unable to parse params", "find all")
+			return
+		}
+		params = &p
 	}
 	resp, err := h.repo.FindAllTags(params)
 	if err != nil {
@@ -77,7 +81,7 @@ func (h *tagHandler) FindResourcesByTag(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	id := vars["id"]
 	params := internal.ResourceParams{Tag: id}
-	resp, err := h.repo.FindAll(params)
+	resp, err := h.repo.FindAllResources(&params)
 	if err != nil {
 		EncodeError(w, http.StatusInternalServerError, "tags", "unable to find tags", "find all resources")
 		return

@@ -32,13 +32,17 @@ func NewResourceHandler(mr *mux.Router, repo database.Repository) http.Handler {
 }
 
 func (h *resourceHandler) FindAll(w http.ResponseWriter, r *http.Request) {
-	var params internal.ResourceParams
-	if err := decoder.Decode(&params, r.URL.Query()); err != nil {
-		logrus.WithError(err).Error("unable to parse params")
-		EncodeError(w, http.StatusBadRequest, "resources", "unable to parse params", "find all")
-		return
+	var params *internal.ResourceParams
+	if len(r.URL.Query()) > 0 {
+		p := internal.ResourceParams{}
+		if err := decoder.Decode(&p, r.URL.Query()); err != nil {
+			logrus.WithError(err).Error("unable to parse params")
+			EncodeError(w, http.StatusBadRequest, "resources", "unable to parse params", "find all")
+			return
+		}
+		params = &p
 	}
-	resp, err := h.repo.FindAll(params)
+	resp, err := h.repo.FindAllResources(params)
 	if err != nil {
 		EncodeError(w, http.StatusInternalServerError, "resources", "unable to find resources", "find all")
 		return
@@ -51,7 +55,7 @@ func (h *resourceHandler) FindByID(w http.ResponseWriter, r *http.Request) {
 
 	id := vars["id"]
 
-	resp, err := h.repo.FindByID(id)
+	resp, err := h.repo.FindResourceByID(id)
 	if err != nil {
 		EncodeError(w, http.StatusInternalServerError, "resources", "unable to find resource", "find by id")
 		return
@@ -70,9 +74,14 @@ func (h *resourceHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.repo.CreateResource(resource)
-	if err != nil {
+	switch err {
+	case nil:
+		EncodeJSONResponse(r.Context(), w, resp)
+	case internal.ErrInvalid:
+		EncodeError(w, http.StatusBadRequest, "resources", "missing fields", "create")
+	case internal.ErrConflict:
+		EncodeError(w, http.StatusConflict, "resources", "entity exists", "create")
+	default:
 		EncodeError(w, http.StatusInternalServerError, "resources", "failed to create resource", "create")
-		return
 	}
-	EncodeJSONResponse(r.Context(), w, resp)
 }

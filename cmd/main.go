@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/holmes89/tags/internal"
 	"github.com/holmes89/tags/internal/database"
 	"github.com/holmes89/tags/internal/handlers/rest"
 	"github.com/sirupsen/logrus"
@@ -34,7 +35,11 @@ func NewApp() *fx.App {
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	return fx.New(
 		fx.Provide(
-			database.NewInMemoryRepository,
+			internal.LoadEnvConfiguration,
+			database.NewBoltConnection,
+			database.NewKVStore,
+			database.NewGraphDatabase,
+			database.NewRepository,
 			NewMux,
 		),
 		fx.Invoke(
