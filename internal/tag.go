@@ -1,8 +1,8 @@
 package internal
 
 type Tag struct {
-	Name string `json:"name"`
-	Color Color `json:"color"`
+	Name  string `json:"name"`
+	Color Color  `json:"color"`
 }
 
 type TagFactory interface {

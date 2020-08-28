@@ -2,8 +2,8 @@ package internal
 
 import "errors"
 
-var(
+var (
 	ErrNotFound = errors.New("not found")
 	ErrConflict = errors.New("already exists")
-	ErrInvalid = errors.New("invalid entity")
+	ErrInvalid  = errors.New("invalid entity")
 )

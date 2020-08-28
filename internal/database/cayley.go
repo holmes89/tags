@@ -24,7 +24,6 @@ type GraphDB interface {
 	FindAllTags(params internal.TagParams) ([]string, error)
 }
 
-
 func NewGraphDatabase() GraphDB {
 	conn, err := cayley.NewMemoryGraph()
 	if err != nil {
@@ -35,7 +34,6 @@ func NewGraphDatabase() GraphDB {
 	return &graphdb{conn: conn}
 }
 
-
 func (r *graphdb) DeleteResourceTag(resource internal.Resource, tag string) error {
 	id := resourceKey(resource.ID)
 	tagID := tagKey(tag)
@@ -44,7 +42,7 @@ func (r *graphdb) DeleteResourceTag(resource internal.Resource, tag string) erro
 	trans.RemoveQuad(quad.Make(id, "tag", tagID, nil))
 	trans.RemoveQuad(quad.Make(tagID, "resource", id, nil))
 
-	if err := r.conn.ApplyTransaction(trans); err != nil{
+	if err := r.conn.ApplyTransaction(trans); err != nil {
 		logrus.WithError(err).Error("unable to delete tagged resource")
 		return errors.New("unable to add resource tag")
 	}
@@ -60,13 +58,12 @@ func (r *graphdb) AddResourceTag(resource internal.Resource, tag string) error {
 	trans.AddQuad(quad.Make(id, "tag", tagID, nil))
 	trans.AddQuad(quad.Make(tagID, "resource", id, nil))
 
-	if err := r.conn.ApplyTransaction(trans); err != nil{
+	if err := r.conn.ApplyTransaction(trans); err != nil {
 		logrus.WithError(err).Error("unable to delete tagged resource")
 		return errors.New("unable to add resource tag")
 	}
 	return nil
 }
-
 
 func (r *graphdb) CreateResource(resource internal.Resource) error {
 	id := resourceKey(resource.ID)
@@ -81,36 +78,33 @@ func (r *graphdb) CreateResource(resource internal.Resource) error {
 		t.AddQuad(quad.Make(id, "tag", tagID, nil))
 		t.AddQuad(quad.Make(tagID, "resource", id, nil))
 	}
-	if err := r.conn.ApplyTransaction(t); err != nil{
+	if err := r.conn.ApplyTransaction(t); err != nil {
 		logrus.WithError(err).Error("unable to write resource")
 		return errors.New("unable to add resource")
 	}
 
-	return  nil
+	return nil
 }
 
 func (r *graphdb) CreateTag(tag internal.Tag) error {
 	id := tagKey(tag.Name)
 	logrus.WithField("id", id).Info("adding tag")
-	if err := r.conn.AddQuad(quad.Make(id, "color", "color:"+tag.Color, nil)); err != nil{
+	if err := r.conn.AddQuad(quad.Make(id, "color", "color:"+tag.Color, nil)); err != nil {
 		logrus.WithError(err).Error("unable to write tag graph")
 		return errors.New("unable to add tag")
 	}
 	return nil
 }
 
-
-func (r *graphdb) FindAllResources(params internal.ResourceParams) ([]string, error){
+func (r *graphdb) FindAllResources(params internal.ResourceParams) ([]string, error) {
 	return r.findAll("resource", reflect.ValueOf(params))
 }
 
-
-
-func (r *graphdb) FindAllTags(params internal.TagParams) ([]string, error){
+func (r *graphdb) FindAllTags(params internal.TagParams) ([]string, error) {
 	return r.findAll("tag", reflect.ValueOf(params))
 }
 
-func (r *graphdb) findAll(t string, v reflect.Value) ([]string, error){
+func (r *graphdb) findAll(t string, v reflect.Value) ([]string, error) {
 	var ids []string
 	numOfFields := v.NumField()
 	for i := 0; i < numOfFields; i++ {
@@ -121,13 +115,13 @@ func (r *graphdb) findAll(t string, v reflect.Value) ([]string, error){
 			continue
 		}
 		logrus.WithFields(logrus.Fields{
-			"path": path,
+			"path":  path,
 			"value": value,
-			"type": t,
+			"type":  t,
 		}).Info("searching")
 		query := fmt.Sprintf("%s:%s", path, value)
 		p := cayley.StartPath(r.conn, quad.String(query)).Out(quad.String(t))
-		err := p.Iterate(nil).EachValue(nil, func(value quad.Value){
+		err := p.Iterate(nil).EachValue(nil, func(value quad.Value) {
 			id := strings.Split((quad.NativeOf(value)).(string), ":")[1]
 			tids = append(tids, id)
 		})
@@ -145,7 +139,6 @@ func (r *graphdb) findAll(t string, v reflect.Value) ([]string, error){
 	return ids, nil
 }
 
-
 func resourceKey(id string) string {
 	return fmt.Sprintf("resource:%s", id)
 }
@@ -158,7 +151,7 @@ func intersection(a []string, b []string) []string {
 	set := make([]string, 0)
 	hash := make(map[string]bool)
 
-	for _, v := range a{
+	for _, v := range a {
 		hash[v] = true
 	}
 

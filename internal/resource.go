@@ -1,10 +1,10 @@
 package internal
 
 type Resource struct {
-	ID string `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 	Type string `json:"type"`
-	Tags []Tag `json:"tags"`
+	Tags []Tag  `json:"tags"`
 }
 
 type ResourceFactory interface {
@@ -24,5 +24,5 @@ type ResourceTagger interface {
 type ResourceParams struct {
 	Type string `schema:"type"`
 	Name string `schema:"name"`
-	Tag string `schema:"tag"`
+	Tag  string `schema:"tag"`
 }

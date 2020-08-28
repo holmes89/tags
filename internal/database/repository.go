@@ -16,7 +16,7 @@ type Repository interface {
 
 type repository struct {
 	kvstore KVStore
-	gdb GraphDB
+	gdb     GraphDB
 }
 
 func NewRepository(kv KVStore, g GraphDB) Repository {
